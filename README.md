@@ -72,17 +72,28 @@ option'](https://bbs.archlinux.org/viewtopic.php?id=271264).
 
 Accordingly mount command at top works on my `5.10.103-v7+` Raspberry Pi, but not on my `6.12.34+rpt-rpi-2712` Raspberry Pi.
 
-Perhaps it is possible to [downgrade the kernel with
-rpi-update](https://www.reddit.com/r/raspberry_pi/comments/5lo5do/how_do_i_downgradeupgrade_to_a_specific_kernel).
+It's very difficult to downgrade the kernel to
+5.1 on Raspberry Pi OS.  It is probably not possible to do this on the Pi5
+(see below).  For a Pi4, I've tried suitable modifications to these [kernel
+downgrade
+instructions](https://github.com/HinTak/RaspberryPi-Dev/blob/master/Downgrading-Pi-Kernel.md),
+and
+[rpi-update](https://www.reddit.com/r/raspberry_pi/comments/5lo5do/how_do_i_downgradeupgrade_to_a_specific_kernel),
+without success.  I succeeded in making the Pi unbootable with the first set
+of instructions.  I ended up downloading
+`2022-09-22-raspios-buster-armhf.img.xz` from
+<https://archive.raspberrypi.org/debian/pool/main/r/raspberrypi-firmware/>,
+and burning to an SD card with the [Raspberry Pi
+imager](https://www.raspberrypi.com/software/) (selecting Other, image file).
+I believe this is the last image with a kernel < 5.15 (it has `5.10.103-v7+`).
+I made sure I did no updates that might upgrade the kernel after installing,
+and ran `sudo apt-mark hold raspberrypi-kernel`, as in the kernel downgrade
+instructions above.
 
-Review `rpi-update` commits with:
-
-```
-git clone --bare --filter=blob:none https://github.com/raspberrypi/rpi-firmware
-cd rpi-firmware.git && git log
-```
-
-Last pre-5.15 commit is for 5.10, at `770ca2c26e9cf341db93786d3f03c89964b1f76f`.
+Google Gemini claims that the earliest kernel that will boot on the Pi 5 is
+6.1 — see <https://www.raspberrypi.com/software/operating-systems> as indirect
+evidence.  Specifically, it claims the kernel before 6.1 did not support the
+Pi 5 `bcm2712` chip.
 
 [Some more discussion of mounts, Time
 Capsule](https://github.com/maxx27/afpfs-ng-deb).
