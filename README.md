@@ -1,3 +1,4 @@
+# Time Capsule Plans
 
 What to do with an old Time Capsule, as it drifts toward
 incompatibility with future MacOS?
@@ -12,6 +13,16 @@ Specifically, the problem is:
   version 1 share, but SMB version 1 is buggy, appears
   unusable for Time Machine backups, and won't be supported in
   future MacOS.
+
+## Currently testing
+
+I'm testing [James Chang's
+TimeCapsuleMount](https://github.com/jamesyc/TimeCapsuleMount/tree/main)
+approach.  The repository gives instructions to build and run a Docker
+container on a Linux host, such as a Raspberry Pi.  The container attaches to
+the Time Capsule via the network, mounts the drive via AFP or SMB 1, and
+exports it via a Samba SMB share.  Thus the Time Capsule appears as a new share
+on the network, but via recent SMB.
 
 ## (Rejected) Make bridge to Time Capsule via another server
 
@@ -216,14 +227,13 @@ Capsule with NetBSD 6 installed, whereas I have NetBSD 4.
 I plan to keep an eye out for someone who has done the
 cross-compilation, and `rc.local` etc setup.
 
-## My plan
+## Nuclear option
 
-I'm leaning towards taking the disk out of the Time Capsule,
+I'm also considering taking the disk out of the Time Capsule,
 putting it into a USB 3.5 inch SATA enclosure, and running
 a Time Machine SMB interface to it via the Raspberry Pi.
 The `smb.conf` sections above worked correctly for this on
 testing.
 
-Then again, I have a spare Raspberry Pi and a spare USB
-enclosure.  If I didn't, I guess I'd buy a cheap NAS to do the
-same thing.
+Then again, I have a spare Raspberry Pi and a spare USB enclosure.  If
+I didn't, I might consider buying a NAS to do the same job.
