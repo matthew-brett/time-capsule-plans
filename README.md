@@ -23,7 +23,13 @@ Also see [this discussion](https://github.com/maxx27/afpfs-ng-deb) for working n
 
 ### Mount time capsule via Samba 1
 
-This proved difficult to configure.  If you want to try it, read further.  Summary — as [James Chan found](https://github.com/jamesyc/TimeCapsuleSMB/blob/main/building/build.sh#L7) — one can mount the Time Capsule, and export that mount with a more recent version of Samba, but Time Machine backups fail after about 10 minutes, without explanation.  I suspect that the Capsule Samba 1 implementation is buggy.
+This proved difficult to configure.  If you want to try it,
+read further.  Summary — as [James Chang
+found](https://github.com/jamesyc/TimeCapsuleSMB/blob/main/building/build.sh#L7)
+— one can mount the Time Capsule, and export that mount with
+a more recent version of Samba, but Time Machine backups fail
+after about 10 minutes, without explanation.  I suspect that
+the Capsule Samba 1 implementation is buggy.
 
 With that background, read on if you're interested.
 
