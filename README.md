@@ -7,40 +7,49 @@ Specifically, the problem is:
 * Time machine exports via Apple Filing Protocol (AFP), and
   this won't be supported as a target for Time Machine in
   future MacOS.
-* It also provides a Samba version 1 share, but Samba version
-  1 is buggy, appears unusable for Time Machine backups, and
-  won't be supported in future MacOS.
+* It also provides
+  a [SMB](https://en.wikipedia.org/wiki/Server_Message_Block)
+  version 1 share, but SMB version 1 is buggy, appears
+  unusable for Time Machine backups, and won't be supported in
+  future MacOS.
 
 ## (Rejected) Make bridge to Time Capsule via another server
 
 For example, the server might be a Raspberry Pi.
 
-The idea is that the Pi mounts the Time Capsule data via SMB 1 or AFS.
+The idea is that the Pi mounts the Time Capsule data via SMB
+1 or AFS, and re-exports that mount via a more recent version
+of SMB, implemented with the [Samba
+software](https://www.samba.org).
 
-I spend some considerable time on this, and ended up concluding it could work reliably.
+I spend some considerable time on this, and ended up
+concluding it could not be made to work reliably.
 
 Also see [this discussion](https://github.com/maxx27/afpfs-ng-deb) for working notes and background.
 
-### Mount time capsule via Samba 1
+### Mount time capsule via SMB 1
 
 This proved difficult to configure.  If you want to try it,
 read further.  Summary — as [James Chang
 found](https://github.com/jamesyc/TimeCapsuleSMB/blob/main/building/build.sh#L7)
 — one can mount the Time Capsule, and export that mount with
-a more recent version of Samba, but Time Machine backups fail
+a more recent version of SMB, but Time Machine backups fail
 after about 10 minutes, without explanation.  I suspect that
-the Capsule Samba 1 implementation is buggy.
+the Capsule SMB 1 implementation is buggy.
 
 With that background, read on if you're interested.
 
 Note: *CIFS* ([Common Internet Filing
 System](https://www.techtarget.com/searchstorage/definition/Common-Internet-File-System-CIFS))
-is an alternative name for the Samba 1 protocol.
+is a [slightly modified version of the SMB
+1 protocol](https://en.wikipedia.org/wiki/Server_Message_Block#CIFS).
+I'm using CIFS and SMB 1 interchangeably.
 
 Say the Time Capsule is at address `AncientTime.local`, and
 Time Capsule share name is `Data` (the default). You've
-already make a mount point on the Pi of `/mnt/ancient`.  In
-`/etc/fstab`. Note `cifs` as mount type (Samba 1).
+already make a mount point on the Pi of `/mnt/ancient`.  Put
+something like the line below in `/etc/fstab`. Note `cifs` as
+mount type (SMB 1).
 
 ```bash
 //AncientTime.local/Data /mnt/ancient cifs nofail,rw,workgroup=WORKGROUP,iocharset=utf8,credentials=/home/pi/.ancient.conf,sec=ntlm,rsize=130049,wsize=81920,cache=loose,vers=1.0,uid=pi,gid=pi 0 0
@@ -54,7 +63,7 @@ password=<password to Time Capsule>
 ```
 
 Notice I'm forcing the user to `pi`, and I'll have to later
-attach to the modern Samba service as this user to be able to
+attach to the modern SMB service as this user to be able to
 read and write to the share.  I had to do this to overcome
 permission errors.
 
@@ -84,7 +93,7 @@ unix extensions = no
 vfs object = acl_xattr catia fruit streams_xattr
 fruit:nfc_aces = no
 fruit:aapl = yes
-fruit:model = MacSamba
+fruit:model = MacSMB
 fruit:posix_rename = yes
 fruit:metadata = stream
 fruit:delete_empty_adfiles = yes
@@ -111,32 +120,33 @@ fruit:time machine = yes
 
 ### NTLM authentication and the Linux kernel
 
-The kernel on your Linux (maybe Raspberry Pi) server must be
-< 5.15 to allow `sec=ntlm` above - see [ntlm 'bad
+Generally, the kernel on your Linux (maybe Raspberry Pi)
+server must be < 5.15 to allow `sec=ntlm` above - see [ntlm
+'bad
 option'](https://bbs.archlinux.org/viewtopic.php?id=271264).
 
-Accordingly the mount command mount command works on my
-`5.10.103-v7+` Raspberry Pi, but not on my
-`6.12.34+rpt-rpi-2712` Raspberry Pi.
+Accordingly the mount command works on my `5.10.103-v7+`
+Raspberry Pi, but not on my `6.12.34+rpt-rpi-2712` Raspberry
+Pi.
 
-It's difficult to downgrade the kernel to
-5.10 on Raspberry Pi OS, and it is probably not possible to do
-this on the Pi5 (see below).
+It's difficult to downgrade the kernel to 5.10 on Raspberry Pi
+OS, and it is probably not possible to do this on the Pi5 (see
+below).
 
 If you want to start with a newer kernel, and downgrade, you
 can try these instructions, that failed for me. For a Pi4,
-I've tried suitable modifications to these [kernel downgrade
+I tried suitable modifications to these [kernel downgrade
 instructions](https://github.com/HinTak/RaspberryPi-Dev/blob/master/Downgrading-Pi-Kernel.md),
 and
 [rpi-update](https://www.reddit.com/r/raspberry_pi/comments/5lo5do/how_do_i_downgradeupgrade_to_a_specific_kernel),
 without success.  I succeeded in making the Pi unbootable with
 the first set of instructions.  I believe it is not possible
-to downgrade the kernel below [6.1 on the
+to downgrade the kernel [below 6.1 on the
 Pi5](https://www.raspberrypi.com/software/operating-systems)
 — because 6.1 was the first kernel to support the Pi5's
 `bcm2712` chip.
 
-I solved these problems on a Pi5, by starting with an image
+I solved these problems on a Pi4, by starting with an image
 with a 5.10 kernel.  Specifically, I downloaded
 `2022-09-22-raspios-buster-armhf.img.xz` from
 <https://archive.raspberrypi.org/debian/pool/main/r/raspberrypi-firmware/>,
@@ -148,7 +158,7 @@ updates that might upgrade the kernel after installing, and
 ran `sudo apt-mark hold raspberrypi-kernel`, as in the kernel
 downgrade instructions above.
 
-Anyway, as I noted above, this mount and represent method gave me failed backups without any error — I assume this is because the CIFS / Samba 1 protocol support is buggy on the Time Capsule, and I was reluctant to explore further.
+Anyway, as I noted above, this mount and represent method gave me failed backups without any error — I assume this is because the CIFS / SMB 1 protocol support is buggy on the Time Capsule, and I was reluctant to explore further.
 
 ### Mounting via AFS
 
@@ -176,20 +186,20 @@ sudo mount_afp "afp://myuser:my-tc-password@AncientTime/Data" /mnt/ancient
 (where `my-tc-password` is obviously the password to the Time
 Capsule).  I also tried mounting as `pi` with `sudo --user=pi
 mount_afp ... `. But in neither case could I get the Pi's
-Samba server to read this mount.  Perhaps I needed some way of
+SMB server to read this mount.  Perhaps I needed some way of
 starting the `afpfs` daemon for the relevant users, but
 reading around, it seemed to me that `afpfs-ng` was
 sufficiently poorly supported that it was unlikely to give me
 reliable backups, and I baulked at spending more time
 debugging.
 
+## Insert newer SMB server into Time Capsule
 
-## Insert newer Samba server into Time Capsule
-
-See [overview of process](https://github.com/jamesyc/TimeCapsuleSMB).
+See [James Chang's overview of the
+process](https://github.com/jamesyc/TimeCapsuleSMB).
 
 This looks extremely fiddly, and in particular, the process of
-cross-compiling a Samba server for `evbarm` architecture, and
+cross-compiling a SMB server for `evbarm` architecture, and
 configuring it for the Time Capsule, which has a very sparse
 operating system.
 
@@ -200,6 +210,9 @@ $ uname -a
 NetBSD flashyphase 4.0_STABLE NetBSD 4.0_STABLE #0: Fri May 24 19:48:23 PDT 2019  root@xapp190.apple.com:/BuildRoot/Library/Caches/com.apple.xbs/Sources/M52/AirPortFW-78100.3/Embedded/Firmware/NetBSD/Targets/M52/release/obj/build.kernel-target.conf evbarm
 ```
 
+I was also worried that the James Chang was using a Time
+Capsule with NetBSD 6 installed, whereas I have NetBSD 4.
+
 I plan to keep an eye out for someone who has done the
 cross-compilation, and `rc.local` etc setup.
 
@@ -207,7 +220,7 @@ cross-compilation, and `rc.local` etc setup.
 
 I'm leaning towards taking the disk out of the Time Capsule,
 putting it into a USB 3.5 inch SATA enclosure, and running
-a Time Machine Samba interface to it via the Raspberry Pi.
+a Time Machine SMB interface to it via the Raspberry Pi.
 The `smb.conf` sections above worked correctly for this on
 testing.
 
